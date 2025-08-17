@@ -1,0 +1,146 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Currency Converter</title>
+  <style>
+    body {
+      background: #f7f9fc;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .converter {
+      background: #fff;
+      padding: 25px 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 320px;
+    }
+
+    .converter h2 {
+      margin-bottom: 20px;
+      text-align: center;
+      color: #333;
+    }
+
+    .field {
+      margin-bottom: 15px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 5px;
+      color: #555;
+      font-size: 0.9em;
+    }
+
+    .field select, .field input {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    #result {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #222;
+    }
+
+    .field input {
+      appearance: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="converter">
+    <h2>Currency Converter</h2>
+    <div class="field">
+      <label for="amount">Amount</label>
+      <input type="number" id="amount" placeholder="Enter amount" value="1" min="0">
+    </div>
+    <div class="field">
+      <label for="from-currency">From</label>
+      <select id="from-currency"></select>
+    </div>
+    <div class="field">
+      <label for="to-currency">To</label>
+      <select id="to-currency"></select>
+    </div>
+    <div id="result">Converted: —</div>
+  </div>
+
+  <script>
+    const API_KEY = '6123bf1afe443ebdd7b58bd0';  
+    const API_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/`;
+
+    const fromCurrency = document.getElementById('from-currency');
+    const toCurrency = document.getElementById('to-currency');
+    const amountInput = document.getElementById('amount');
+    const resultDiv = document.getElementById('result');
+
+    // Fetch available currencies list
+    async function initCurrencies() {
+      try {
+        const res = await fetch(API_URL + 'USD');
+        const data = await res.json();
+        const currencies = Object.keys(data.conversion_rates);
+
+        currencies.forEach(cur => {
+          fromCurrency.add(new Option(cur, cur));
+          toCurrency.add(new Option(cur, cur));
+        });
+
+        fromCurrency.value = 'USD';
+        toCurrency.value = 'EUR';
+
+        convertCurrency();
+      } catch (err) {
+        resultDiv.textContent = 'Error loading currencies.';
+        console.error(err);
+      }
+    }
+
+    async function convertCurrency() {
+      const from = fromCurrency.value;
+      const to = toCurrency.value;
+      const amount = parseFloat(amountInput.value) || 0;
+
+      try {
+        const res = await fetch(`${API_URL}${from}`);
+        const data = await res.json();
+
+        if (data.result === "success") {
+          const rate = data.conversion_rates[to];
+          const converted = (amount * rate).toFixed(4);
+          resultDiv.textContent = `${amount} ${from} = ${converted} ${to}`;
+        } else {
+          resultDiv.textContent = 'Conversion failed.';
+        }
+      } catch (err) {
+        resultDiv.textContent = 'Error fetching rate.';
+        console.error(err);
+      }
+    }
+
+    // Event listeners
+    [fromCurrency, toCurrency, amountInput].forEach(el =>
+      el.addEventListener('input', convertCurrency)
+    );
+
+    // Initialize
+    initCurrencies();
+  </script>
+
+</body>
+</html>
